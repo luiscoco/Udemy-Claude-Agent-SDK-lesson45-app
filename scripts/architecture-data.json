@@ -1,0 +1,273 @@
+{
+  "lanes": [
+    "Student UI",
+    "TypeScript host",
+    "SDK runtime",
+    "Children",
+    "Service files"
+  ],
+  "arrows": [
+    [
+      0,
+      1,
+      "1. Choose explicit classroom limits"
+    ],
+    [
+      1,
+      2,
+      "2. Build string-valued cap environment"
+    ],
+    [
+      1,
+      2,
+      "3. Apply the native spend cap"
+    ],
+    [
+      1,
+      2,
+      "4. Preserve the launching environment"
+    ],
+    [
+      2,
+      3,
+      "5. Define a coordinator that can request a grandchild"
+    ],
+    [
+      2,
+      3,
+      "6. Detect actual direct and nested Agent calls"
+    ],
+    [
+      2,
+      1,
+      "7. Retain native tool refusal results"
+    ],
+    [
+      2,
+      1,
+      "8. Handle the native budget result before the exception"
+    ],
+    [
+      3,
+      4,
+      "9. Scope file access independently"
+    ],
+    [
+      1,
+      2,
+      "10. Launch the reviewed Workflow script"
+    ],
+    [
+      2,
+      3,
+      "11. Declare native workflow metadata and inputs"
+    ],
+    [
+      3,
+      4,
+      "12. Coordinate reviewers and return one result"
+    ],
+    [
+      1,
+      4,
+      "13. Independently verify fixture integrity"
+    ]
+  ],
+  "steps": [
+    {
+      "number": 1,
+      "title": "Choose explicit classroom limits",
+      "source": "src/scaling.ts",
+      "code": "export function limitsFor(mode: Mode) {\n  return {\n    depth: mode === \"depth2\" ? 2 : 1,\n    concurrency: mode === \"concurrency\" ? 1 : 3,\n    budgetUsd: mode === \"budget\" ? 0.00001 : 0.8,\n    workflowConcurrency: mode === \"serial\" ? 1 : 2,\n  };\n}\nexport function capEnvironment(mode: Mode) {",
+      "language": "typescript",
+      "explanation": "Select depth, concurrency and estimated spend independently. This three-service teaching example uses smaller explicit caps rather than relying on runtime defaults.",
+      "firstLine": 3,
+      "lastLine": 11,
+      "anchors": [
+        "export function limitsFor(mode: Mode) {"
+      ],
+      "sourceSHA256": "abe21938d3959e4cb744774b55bdca861fe72177a22f940998f24c020c8bb8d3",
+      "narration": "Step 1. Select depth, concurrency and estimated spend independently. This three-service teaching example uses smaller explicit caps rather than relying on runtime defaults. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 2,
+      "title": "Build string-valued cap environment",
+      "source": "src/scaling.ts",
+      "code": "export function capEnvironment(mode: Mode) {\n  const limits = limitsFor(mode);\n  return {\n    CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH: String(limits.depth),\n    CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS: String(limits.concurrency),\n    CLAUDE_CODE_WORKFLOW_MAX_CONCURRENT_AGENTS: String(\n      limits.workflowConcurrency,\n    ),\n  };\n}",
+      "language": "typescript",
+      "explanation": "Pass depth and Agent concurrency through env strings. Workflow has a separate concurrency setting; a serial workflow uses one slot.",
+      "firstLine": 11,
+      "lastLine": 20,
+      "anchors": [
+        "export function capEnvironment(mode: Mode) {"
+      ],
+      "sourceSHA256": "abe21938d3959e4cb744774b55bdca861fe72177a22f940998f24c020c8bb8d3",
+      "narration": "Step 2. Pass depth and Agent concurrency through env strings. Workflow has a separate concurrency setting; a serial workflow uses one slot. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 3,
+      "title": "Apply the native spend cap",
+      "source": "src/agent.ts",
+      "code": "maxBudgetUsd: limits.budgetUsd,\n    effort: \"low\",\n    thinking: { type: \"disabled\" },\n    abortController: controller,",
+      "language": "typescript",
+      "explanation": "maxBudgetUsd bounds estimated spend for the query and child requests. It is not a prepaid currency reservation; a request can cross the threshold before the SDK stops.",
+      "firstLine": 88,
+      "lastLine": 91,
+      "anchors": [
+        "maxBudgetUsd: limits.budgetUsd,"
+      ],
+      "sourceSHA256": "7bfaee27ca4e2da964a96b5c5df8269c8023d7a1e6f4f4d36fcfc3e033bb16b4",
+      "narration": "Step 3. maxBudgetUsd bounds estimated spend for the query and child requests. It is not a prepaid currency reservation; a request can cross the threshold before the SDK stops. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 4,
+      "title": "Preserve the launching environment",
+      "source": "src/agent.ts",
+      "code": "env: {\n      ...process.env,\n      HOME: w.home,\n      USERPROFILE: w.home,\n      CLAUDE_CONFIG_DIR: w.sdkHome,\n      ANTHROPIC_AUTH_TOKEN: undefined,\n      CLAUDE_CODE_DISABLE_AUTO_MEMORY: \"1\",\n      ...capEnvironment(c.mode),\n    },",
+      "language": "typescript",
+      "explanation": "TypeScript env replaces the subprocess environment. Spread process.env, keep private credentials on the server, isolate settings, and append the explicit caps.",
+      "firstLine": 101,
+      "lastLine": 109,
+      "anchors": [
+        "env: {"
+      ],
+      "sourceSHA256": "7bfaee27ca4e2da964a96b5c5df8269c8023d7a1e6f4f4d36fcfc3e033bb16b4",
+      "narration": "Step 4. TypeScript env replaces the subprocess environment. Spread process.env, keep private credentials on the server, isolate settings, and append the explicit caps. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 5,
+      "title": "Define a coordinator that can request a grandchild",
+      "source": "src/agents.ts",
+      "code": "coordinator: {\n      description:\n        \"Delegates one service review if depth permits, otherwise performs the read-only audit itself.\",\n      prompt:\n        \"Use Agent to delegate the supplied service file to auditor if Agent is available. If depth restrictions removed Agent, Read the file yourself and explicitly report that Agent is unavailable. Never invent delegation or modify files. Report under 50 words.\",\n      tools: [\"Agent\", \"Read\"],\n      model: \"inherit\",\n      maxTurns: 6,",
+      "language": "typescript",
+      "explanation": "The coordinator declares Agent and Read. The runtime depth limit can remove Agent from the bottom layer; depth 1 and depth 2 produce different native trees.",
+      "firstLine": 12,
+      "lastLine": 19,
+      "anchors": [
+        "coordinator: {"
+      ],
+      "sourceSHA256": "836aa3ca1d965e9d56353ca14013a894d7796727f40651219d0a9290e9e9058f",
+      "narration": "Step 5. The coordinator declares Agent and Read. The runtime depth limit can remove Agent from the bottom layer; depth 1 and depth 2 produce different native trees. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 6,
+      "title": "Detect actual direct and nested Agent calls",
+      "source": "src/agent.ts",
+      "code": "if (b.name === \"Agent\" || b.name === \"Task\") {\n                delegations.push(r);\n                observe(\"delegation\", r);\n              } else if (b.name === \"Workflow\") observe(\"workflow-launch\", r);\n              else if (parentId) {",
+      "language": "typescript",
+      "explanation": "Retain all real Agent tool-use blocks, including nested delegations with a parent tool-use ID. A parent report alone does not prove a grandchild ran.",
+      "firstLine": 237,
+      "lastLine": 241,
+      "anchors": [
+        "if (b.name === \"Agent\" || b.name === \"Task\") {"
+      ],
+      "sourceSHA256": "7bfaee27ca4e2da964a96b5c5df8269c8023d7a1e6f4f4d36fcfc3e033bb16b4",
+      "narration": "Step 6. Retain all real Agent tool-use blocks, including nested delegations with a parent tool-use ID. A parent report alone does not prove a grandchild ran. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 7,
+      "title": "Retain native tool refusal results",
+      "source": "src/agent.ts",
+      "code": "toolUseId: b.tool_use_id,\n                parentId: message.parent_tool_use_id,\n                content: b.content,\n                isError: b.is_error,\n              };",
+      "language": "typescript",
+      "explanation": "Record actual tool-return content and is_error. Concurrency refusal is a native result, not a host-invented simulation, and refused services remain unaudited.",
+      "firstLine": 264,
+      "lastLine": 268,
+      "anchors": [
+        "toolUseId: b.tool_use_id,"
+      ],
+      "sourceSHA256": "7bfaee27ca4e2da964a96b5c5df8269c8023d7a1e6f4f4d36fcfc3e033bb16b4",
+      "narration": "Step 7. Record actual tool-return content and is_error. Concurrency refusal is a native result, not a host-invented simulation, and refused services remain unaudited. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 8,
+      "title": "Handle the native budget result before the exception",
+      "source": "src/agent.ts",
+      "code": "status: message.subtype,\n            text:\n              message.subtype === \"success\"\n                ? message.result\n                : message.errors.join(\"\\n\"),\n            costUsd: message.total_cost_usd,\n            modelUsage: message.modelUsage,\n          };",
+      "language": "typescript",
+      "explanation": "Retain result subtype, errors and estimated cost even when the SDK then raises. Budget mode expects error_max_budget_usd rather than treating it as a successful audit.",
+      "firstLine": 284,
+      "lastLine": 291,
+      "anchors": [
+        "status: message.subtype,"
+      ],
+      "sourceSHA256": "7bfaee27ca4e2da964a96b5c5df8269c8023d7a1e6f4f4d36fcfc3e033bb16b4",
+      "narration": "Step 8. Retain result subtype, errors and estimated cost even when the SDK then raises. Budget mode expects error_max_budget_usd rather than treating it as a successful audit. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 9,
+      "title": "Scope file access independently",
+      "source": "src/policy.ts",
+      "code": "if (name === \"Read\")\n    return (\n      typeof i.file_path === \"string\" &&\n      [...FILES, \"CLAUDE.md\"].some(\n        (file) => resolve(cwd, i.file_path as string) === resolve(cwd, file),\n      )\n    );\n  return false;",
+      "language": "typescript",
+      "explanation": "Permit only the three disposable service files and classroom instructions. Reviewers and workflow agents cannot edit source, execute shell commands or inspect .env.",
+      "firstLine": 17,
+      "lastLine": 24,
+      "anchors": [
+        "if (name === \"Read\")"
+      ],
+      "sourceSHA256": "769605f84e3e64a6041e6e31ff0495b7769f1b9ed8f80b74bb9373b108d7f51d",
+      "narration": "Step 9. Permit only the three disposable service files and classroom instructions. Reviewers and workflow agents cannot edit source, execute shell commands or inspect .env. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 10,
+      "title": "Launch the reviewed Workflow script",
+      "source": "src/agent.ts",
+      "code": "const script = workflowScript(c.mode);\n                observe(\"workflow-script\", { script });\n                return {\n                  hookSpecificOutput: {\n                    hookEventName: \"PreToolUse\",\n                    permissionDecision: \"allow\",\n                    updatedInput: { script },\n                  },\n                };",
+      "language": "typescript",
+      "explanation": "The host supplies its fixed reviewed script through the native hook. Workflow is enabled in allowedTools, and repeat or unrelated launches are not approved.",
+      "firstLine": 126,
+      "lastLine": 134,
+      "anchors": [
+        "const script = workflowScript(c.mode);"
+      ],
+      "sourceSHA256": "7bfaee27ca4e2da964a96b5c5df8269c8023d7a1e6f4f4d36fcfc3e033bb16b4",
+      "narration": "Step 10. The host supplies its fixed reviewed script through the native hook. Workflow is enabled in allowedTools, and repeat or unrelated launches are not approved. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 11,
+      "title": "Declare native workflow metadata and inputs",
+      "source": "workflows/audit-parallel.js",
+      "code": "export const meta = {\n  name: \"classroom-audit-45\",\n  description: \"Audit three classroom service files\",\n  phases: [\"Audit\"],\n};\nphase(\"Audit\");\nconst files = [\"services/catalog.txt\", \"services/orders.txt\", \"services/billing.txt\"];",
+      "language": "typescript",
+      "explanation": "A Workflow script begins with literal metadata, then a phase and fixed service inputs. The runtime provides agent and pipeline globals outside the parent conversation.",
+      "firstLine": 1,
+      "lastLine": 7,
+      "anchors": [
+        "export const meta = {"
+      ],
+      "sourceSHA256": "14f6be1aab35fd56ab8b635599ab6c13bf514b03fd507ba40530dd04177a3b26",
+      "narration": "Step 11. A Workflow script begins with literal metadata, then a phase and fixed service inputs. The runtime provides agent and pipeline globals outside the parent conversation. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 12,
+      "title": "Coordinate reviewers and return one result",
+      "source": "workflows/audit-parallel.js",
+      "code": "const audit = (file) => agent(\n  \"Read \" + file + \". Report service, auth policy and any AUTH-MISSING-45 finding under 30 words. Do not edit files or use shell.\",\n  { label: file, model: \"haiku\", tools: [\"Read\"] },\n);\nconst reports = await pipeline(files, audit);\nreturn { services: files, reports };",
+      "language": "typescript",
+      "explanation": "Use agent for each read-only audit, pipeline to fan out over the list and script variables to retain intermediate reports. Return the consolidated result after completion.",
+      "firstLine": 8,
+      "lastLine": 13,
+      "anchors": [
+        "const audit = (file) => agent("
+      ],
+      "sourceSHA256": "14f6be1aab35fd56ab8b635599ab6c13bf514b03fd507ba40530dd04177a3b26",
+      "narration": "Step 12. Use agent for each read-only audit, pipeline to fan out over the list and script variables to retain intermediate reports. Return the consolidated result after completion. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 13,
+      "title": "Independently verify fixture integrity",
+      "source": "src/agent.ts",
+      "code": "fixtureUnchanged: before.hash === after.hash,\n      fixture: after,\n      observations,\n      exceptions,\n      scaling: {",
+      "language": "typescript",
+      "explanation": "Hash all three real service fixtures after the run. Native limits, observed child activity and unchanged files are separate pieces of evidence.",
+      "firstLine": 334,
+      "lastLine": 338,
+      "anchors": [
+        "fixtureUnchanged: before.hash === after.hash,"
+      ],
+      "sourceSHA256": "7bfaee27ca4e2da964a96b5c5df8269c8023d7a1e6f4f4d36fcfc3e033bb16b4",
+      "narration": "Step 13. Hash all three real service fixtures after the run. Native limits, observed child activity and unchanged files are separate pieces of evidence. This source excerpt shows the corresponding application statement."
+    }
+  ]
+}

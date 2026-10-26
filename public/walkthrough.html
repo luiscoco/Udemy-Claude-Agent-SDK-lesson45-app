@@ -1,0 +1,81 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Agent SDK LESSON 45 · How the app &lt;em&gt;was built.&lt;/em&gt;</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/code-highlighting.css"></head><body><main><div class="brand"><a href="/">How <span>Claude Agent SDK</span> Works</a><span class="badge">LESSON 45 / SUBAGENTS FUNDAMENTALS</span></div><header class="hero"><div><div class="eyebrow">DEFINE · DELEGATE · OBSERVE</div><h1>How the app <em>was built.</em></h1><p class="lead">Every architecture step has source-linked coloured code.</p></div><img src="/astronaut.png" alt="Course astronaut mascot"></header><nav class="nav" aria-label="Application sections"><a href="/">Application lab</a><a href="/learn.html">What you will learn</a><a href="/run.html">How to run</a><a href="/architecture.html">Architecture & workflow</a><a href="/walkthrough.html" aria-current="page">Code walkthrough</a><button id="theme" type="button">Dark mode</button></nav><div class="grid"><article class="card"><span class="number">01</span><h3>Version and defaults</h3><p>The lesson documents default depth 3, Agent concurrency 20 and no spend cap. This app pins the SDK and sets every cap explicitly. It uses three files rather than spending tokens on hundreds of workers; the same list/loop pattern illustrates larger runs.</p></article><article class="card"><span class="number">02</span><h3>Depth versus a refusal</h3><p>At depth 1 a child may not receive Agent at all and can perform its own permitted work. Depth2 demonstrates a real grandchild. Do not claim an error string must appear when the capability was removed before a call.</p></article><article class="card"><span class="number">03</span><h3>Concurrency and incomplete work</h3><p>The cap-one experiment asks for three background launches together. Native errors identify refused spawns. Reports must distinguish the admitted service from files that were never audited; do not infer complete coverage from a parent success result.</p></article><article class="card"><span class="number">04</span><h3>Spend estimate and expected SDK exception</h3><p>Budget mode is intentionally tiny. It retains error_max_budget_usd and the following SDK exception as expected evidence. An in-flight request can exceed the estimate before enforcement; maxBudgetUsd is not an exact billing guarantee. Do not blindly sum cumulative result frames.</p></article><article class="card"><span class="number">05</span><h3>Opus 5 prompts and caps</h3><p>The two Opus scenarios use an available Opus 5 model with either a custom instruction or claude_code preset plus an explicit user task. The model-specific delegation instruction steers behavior; depth/concurrency/spend controls remain necessary and explicit.</p></article><article class="card"><span class="number">06</span><h3>Native Workflow evidence</h3><p>The actual Workflow tool launches the reviewed script. Native lifecycle hooks observe child starts and stops, PreToolUse hooks observe real service reads, and task_notification reports workflow completion. Workflow child messages are not all forwarded as assistant events; do not mistake an empty direct-Agent catalog for no workflow work.</p></article><article class="card"><span class="number">07</span><h3>Two concurrency mechanisms</h3><p>CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS applies to direct Agent spawning. Workflow has its own CLAUDE_CODE_WORKFLOW_MAX_CONCURRENT_AGENTS resource setting. Fan-out uses two workflow slots; the serial script awaits each task and uses one. Inspect native lifecycle timing without promising a speedup.</p></article><article class="card"><span class="number">08</span><h3>Script execution context</h3><p>workflows/audit-parallel.js and audit-serial.js run inside the native Workflow runtime, which supplies agent, pipeline, phase and top-level return semantics. They are not standalone Node modules. The host reads only those packaged scripts and supplies one fixed script to the tool; students never need to paste arbitrary code.</p></article><article class="card"><span class="number">09</span><h3>Primary documentation</h3><p>See https://code.claude.com/docs/en/agent-sdk/subagents and https://code.claude.com/docs/en/workflows for native caps, Workflow execution and version-dependent behavior.</p></article></div><section class="step workflow-step" id="workflow-step-01"><span class="number">01</span><h3>1. Choose explicit classroom limits</h3><p>Select depth, concurrency and estimated spend independently. This three-service teaching example uses smaller explicit caps rather than relying on runtime defaults.</p><p class="source">Source: src/scaling.ts · lines 3–11 · selected source; surrounding code omitted</p><pre><code class="language-typescript">export function limitsFor(mode: Mode) {
+  return {
+    depth: mode === &quot;depth2&quot; ? 2 : 1,
+    concurrency: mode === &quot;concurrency&quot; ? 1 : 3,
+    budgetUsd: mode === &quot;budget&quot; ? 0.00001 : 0.8,
+    workflowConcurrency: mode === &quot;serial&quot; ? 1 : 2,
+  };
+}
+export function capEnvironment(mode: Mode) {</code></pre></section><section class="step workflow-step" id="workflow-step-02"><span class="number">02</span><h3>2. Build string-valued cap environment</h3><p>Pass depth and Agent concurrency through env strings. Workflow has a separate concurrency setting; a serial workflow uses one slot.</p><p class="source">Source: src/scaling.ts · lines 11–20 · selected source; surrounding code omitted</p><pre><code class="language-typescript">export function capEnvironment(mode: Mode) {
+  const limits = limitsFor(mode);
+  return {
+    CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH: String(limits.depth),
+    CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS: String(limits.concurrency),
+    CLAUDE_CODE_WORKFLOW_MAX_CONCURRENT_AGENTS: String(
+      limits.workflowConcurrency,
+    ),
+  };
+}</code></pre></section><section class="step workflow-step" id="workflow-step-03"><span class="number">03</span><h3>3. Apply the native spend cap</h3><p>maxBudgetUsd bounds estimated spend for the query and child requests. It is not a prepaid currency reservation; a request can cross the threshold before the SDK stops.</p><p class="source">Source: src/agent.ts · lines 88–91 · selected source; surrounding code omitted</p><pre><code class="language-typescript">maxBudgetUsd: limits.budgetUsd,
+    effort: &quot;low&quot;,
+    thinking: { type: &quot;disabled&quot; },
+    abortController: controller,</code></pre></section><section class="step workflow-step" id="workflow-step-04"><span class="number">04</span><h3>4. Preserve the launching environment</h3><p>TypeScript env replaces the subprocess environment. Spread process.env, keep private credentials on the server, isolate settings, and append the explicit caps.</p><p class="source">Source: src/agent.ts · lines 101–109 · selected source; surrounding code omitted</p><pre><code class="language-typescript">env: {
+      ...process.env,
+      HOME: w.home,
+      USERPROFILE: w.home,
+      CLAUDE_CONFIG_DIR: w.sdkHome,
+      ANTHROPIC_AUTH_TOKEN: undefined,
+      CLAUDE_CODE_DISABLE_AUTO_MEMORY: &quot;1&quot;,
+      ...capEnvironment(c.mode),
+    },</code></pre></section><section class="step workflow-step" id="workflow-step-05"><span class="number">05</span><h3>5. Define a coordinator that can request a grandchild</h3><p>The coordinator declares Agent and Read. The runtime depth limit can remove Agent from the bottom layer; depth 1 and depth 2 produce different native trees.</p><p class="source">Source: src/agents.ts · lines 12–19 · selected source; surrounding code omitted</p><pre><code class="language-typescript">coordinator: {
+      description:
+        &quot;Delegates one service review if depth permits, otherwise performs the read-only audit itself.&quot;,
+      prompt:
+        &quot;Use Agent to delegate the supplied service file to auditor if Agent is available. If depth restrictions removed Agent, Read the file yourself and explicitly report that Agent is unavailable. Never invent delegation or modify files. Report under 50 words.&quot;,
+      tools: [&quot;Agent&quot;, &quot;Read&quot;],
+      model: &quot;inherit&quot;,
+      maxTurns: 6,</code></pre></section><section class="step workflow-step" id="workflow-step-06"><span class="number">06</span><h3>6. Detect actual direct and nested Agent calls</h3><p>Retain all real Agent tool-use blocks, including nested delegations with a parent tool-use ID. A parent report alone does not prove a grandchild ran.</p><p class="source">Source: src/agent.ts · lines 237–241 · selected source; surrounding code omitted</p><pre><code class="language-typescript">if (b.name === &quot;Agent&quot; || b.name === &quot;Task&quot;) {
+                delegations.push(r);
+                observe(&quot;delegation&quot;, r);
+              } else if (b.name === &quot;Workflow&quot;) observe(&quot;workflow-launch&quot;, r);
+              else if (parentId) {</code></pre></section><section class="step workflow-step" id="workflow-step-07"><span class="number">07</span><h3>7. Retain native tool refusal results</h3><p>Record actual tool-return content and is_error. Concurrency refusal is a native result, not a host-invented simulation, and refused services remain unaudited.</p><p class="source">Source: src/agent.ts · lines 264–268 · selected source; surrounding code omitted</p><pre><code class="language-typescript">toolUseId: b.tool_use_id,
+                parentId: message.parent_tool_use_id,
+                content: b.content,
+                isError: b.is_error,
+              };</code></pre></section><section class="step workflow-step" id="workflow-step-08"><span class="number">08</span><h3>8. Handle the native budget result before the exception</h3><p>Retain result subtype, errors and estimated cost even when the SDK then raises. Budget mode expects error_max_budget_usd rather than treating it as a successful audit.</p><p class="source">Source: src/agent.ts · lines 284–291 · selected source; surrounding code omitted</p><pre><code class="language-typescript">status: message.subtype,
+            text:
+              message.subtype === &quot;success&quot;
+                ? message.result
+                : message.errors.join(&quot;\n&quot;),
+            costUsd: message.total_cost_usd,
+            modelUsage: message.modelUsage,
+          };</code></pre></section><section class="step workflow-step" id="workflow-step-09"><span class="number">09</span><h3>9. Scope file access independently</h3><p>Permit only the three disposable service files and classroom instructions. Reviewers and workflow agents cannot edit source, execute shell commands or inspect .env.</p><p class="source">Source: src/policy.ts · lines 17–24 · selected source; surrounding code omitted</p><pre><code class="language-typescript">if (name === &quot;Read&quot;)
+    return (
+      typeof i.file_path === &quot;string&quot; &amp;&amp;
+      [...FILES, &quot;CLAUDE.md&quot;].some(
+        (file) =&gt; resolve(cwd, i.file_path as string) === resolve(cwd, file),
+      )
+    );
+  return false;</code></pre></section><section class="step workflow-step" id="workflow-step-10"><span class="number">10</span><h3>10. Launch the reviewed Workflow script</h3><p>The host supplies its fixed reviewed script through the native hook. Workflow is enabled in allowedTools, and repeat or unrelated launches are not approved.</p><p class="source">Source: src/agent.ts · lines 126–134 · selected source; surrounding code omitted</p><pre><code class="language-typescript">const script = workflowScript(c.mode);
+                observe(&quot;workflow-script&quot;, { script });
+                return {
+                  hookSpecificOutput: {
+                    hookEventName: &quot;PreToolUse&quot;,
+                    permissionDecision: &quot;allow&quot;,
+                    updatedInput: { script },
+                  },
+                };</code></pre></section><section class="step workflow-step" id="workflow-step-11"><span class="number">11</span><h3>11. Declare native workflow metadata and inputs</h3><p>A Workflow script begins with literal metadata, then a phase and fixed service inputs. The runtime provides agent and pipeline globals outside the parent conversation.</p><p class="source">Source: workflows/audit-parallel.js · lines 1–7 · selected source; surrounding code omitted</p><pre><code class="language-typescript">export const meta = {
+  name: &quot;classroom-audit-45&quot;,
+  description: &quot;Audit three classroom service files&quot;,
+  phases: [&quot;Audit&quot;],
+};
+phase(&quot;Audit&quot;);
+const files = [&quot;services/catalog.txt&quot;, &quot;services/orders.txt&quot;, &quot;services/billing.txt&quot;];</code></pre></section><section class="step workflow-step" id="workflow-step-12"><span class="number">12</span><h3>12. Coordinate reviewers and return one result</h3><p>Use agent for each read-only audit, pipeline to fan out over the list and script variables to retain intermediate reports. Return the consolidated result after completion.</p><p class="source">Source: workflows/audit-parallel.js · lines 8–13 · selected source; surrounding code omitted</p><pre><code class="language-typescript">const audit = (file) =&gt; agent(
+  &quot;Read &quot; + file + &quot;. Report service, auth policy and any AUTH-MISSING-45 finding under 30 words. Do not edit files or use shell.&quot;,
+  { label: file, model: &quot;haiku&quot;, tools: [&quot;Read&quot;] },
+);
+const reports = await pipeline(files, audit);
+return { services: files, reports };</code></pre></section><section class="step workflow-step" id="workflow-step-13"><span class="number">13</span><h3>13. Independently verify fixture integrity</h3><p>Hash all three real service fixtures after the run. Native limits, observed child activity and unchanged files are separate pieces of evidence.</p><p class="source">Source: src/agent.ts · lines 334–338 · selected source; surrounding code omitted</p><pre><code class="language-typescript">fixtureUnchanged: before.hash === after.hash,
+      fixture: after,
+      observations,
+      exceptions,
+      scaling: {</code></pre></section><footer>CLAUDE AGENT SDK · LESSON 45 · PARENT · SPECIALISTS · REPORTS<br>TypeScript · local runtime · API key stays on the server</footer></main><script src="/navigation.js"></script><script src="/prism.js"></script><script src="/prism-markup.min.js"></script><script src="/prism-yaml.min.js"></script><script src="/prism-markdown.min.js"></script><script src="/prism-python.min.js"></script><script src="/code-highlighting.js"></script><script src="/marked.umd.js"></script><script src="/purify.min.js"></script></body></html>
