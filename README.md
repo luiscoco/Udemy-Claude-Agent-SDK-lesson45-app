@@ -245,7 +245,7 @@ A Workflow script begins with literal metadata, then a phase and fixed service i
 
 Source: `workflows/audit-parallel.js`, selected lines 1–7. Surrounding code omitted.
 
-```typescript
+```javascript
 export const meta = {
   name: "classroom-audit-45",
   description: "Audit three classroom service files",
@@ -261,7 +261,7 @@ Use agent for each read-only audit, pipeline to fan out over the list and script
 
 Source: `workflows/audit-parallel.js`, selected lines 8–13. Surrounding code omitted.
 
-```typescript
+```javascript
 const audit = (file) => agent(
   "Read " + file + ". Report service, auth policy and any AUTH-MISSING-45 finding under 30 words. Do not edit files or use shell.",
   { label: file, model: "haiku", tools: ["Read"] },

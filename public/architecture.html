@@ -63,13 +63,13 @@ export function capEnvironment(mode: Mode) {</code></pre></section><section clas
                     permissionDecision: &quot;allow&quot;,
                     updatedInput: { script },
                   },
-                };</code></pre></section><section class="step workflow-step" id="workflow-step-11"><span class="number">11</span><h3>11. Declare native workflow metadata and inputs</h3><p>A Workflow script begins with literal metadata, then a phase and fixed service inputs. The runtime provides agent and pipeline globals outside the parent conversation.</p><p class="source">Source: workflows/audit-parallel.js · lines 1–7 · selected source; surrounding code omitted</p><pre><code class="language-typescript">export const meta = {
+                };</code></pre></section><section class="step workflow-step" id="workflow-step-11"><span class="number">11</span><h3>11. Declare native workflow metadata and inputs</h3><p>A Workflow script begins with literal metadata, then a phase and fixed service inputs. The runtime provides agent and pipeline globals outside the parent conversation.</p><p class="source">Source: workflows/audit-parallel.js · lines 1–7 · selected source; surrounding code omitted</p><pre><code class="language-javascript">export const meta = {
   name: &quot;classroom-audit-45&quot;,
   description: &quot;Audit three classroom service files&quot;,
   phases: [&quot;Audit&quot;],
 };
 phase(&quot;Audit&quot;);
-const files = [&quot;services/catalog.txt&quot;, &quot;services/orders.txt&quot;, &quot;services/billing.txt&quot;];</code></pre></section><section class="step workflow-step" id="workflow-step-12"><span class="number">12</span><h3>12. Coordinate reviewers and return one result</h3><p>Use agent for each read-only audit, pipeline to fan out over the list and script variables to retain intermediate reports. Return the consolidated result after completion.</p><p class="source">Source: workflows/audit-parallel.js · lines 8–13 · selected source; surrounding code omitted</p><pre><code class="language-typescript">const audit = (file) =&gt; agent(
+const files = [&quot;services/catalog.txt&quot;, &quot;services/orders.txt&quot;, &quot;services/billing.txt&quot;];</code></pre></section><section class="step workflow-step" id="workflow-step-12"><span class="number">12</span><h3>12. Coordinate reviewers and return one result</h3><p>Use agent for each read-only audit, pipeline to fan out over the list and script variables to retain intermediate reports. Return the consolidated result after completion.</p><p class="source">Source: workflows/audit-parallel.js · lines 8–13 · selected source; surrounding code omitted</p><pre><code class="language-javascript">const audit = (file) =&gt; agent(
   &quot;Read &quot; + file + &quot;. Report service, auth policy and any AUTH-MISSING-45 finding under 30 words. Do not edit files or use shell.&quot;,
   { label: file, model: &quot;haiku&quot;, tools: [&quot;Read&quot;] },
 );
