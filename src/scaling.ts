@@ -25,5 +25,8 @@ export const FILES = [
 ];
 export function workflowScript(mode: Mode) {
   const name = mode === "serial" ? "audit-serial.js" : "audit-parallel.js";
-  return readFileSync(new URL("../workflows/" + name, import.meta.url), "utf8");
+  return readFileSync(
+    new URL("../workflows/" + name, import.meta.url),
+    "utf8",
+  ).replace(/\r\n/g, "\n");
 }

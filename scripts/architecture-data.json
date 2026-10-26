@@ -86,7 +86,7 @@
       "anchors": [
         "export function limitsFor(mode: Mode) {"
       ],
-      "sourceSHA256": "abe21938d3959e4cb744774b55bdca861fe72177a22f940998f24c020c8bb8d3",
+      "sourceSHA256": "352030be36a3484b879705ffc744317b041e31ea2af6b434e0812e9acd0f3567",
       "narration": "Step 1. Select depth, concurrency and estimated spend independently. This three-service teaching example uses smaller explicit caps rather than relying on runtime defaults. This source excerpt shows the corresponding application statement."
     },
     {
@@ -101,7 +101,7 @@
       "anchors": [
         "export function capEnvironment(mode: Mode) {"
       ],
-      "sourceSHA256": "abe21938d3959e4cb744774b55bdca861fe72177a22f940998f24c020c8bb8d3",
+      "sourceSHA256": "352030be36a3484b879705ffc744317b041e31ea2af6b434e0812e9acd0f3567",
       "narration": "Step 2. Pass depth and Agent concurrency through env strings. Workflow has a separate concurrency setting; a serial workflow uses one slot. This source excerpt shows the corresponding application statement."
     },
     {

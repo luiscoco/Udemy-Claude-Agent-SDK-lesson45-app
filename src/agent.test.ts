@@ -29,6 +29,7 @@ test("workflow scripts use fixed inputs, literal metadata and bounded coordinati
   const a = workflowScript("workflow"),
     b = workflowScript("serial");
   assert.ok(a.startsWith("export const meta"));
+  assert.ok(!a.includes("\r"), "Workflow input must normalize Windows CRLF");
   assert.ok(a.includes("pipeline(files, audit)"));
   assert.ok(b.includes("for (const file of files)"));
   assert.ok(!a.includes("import("));
